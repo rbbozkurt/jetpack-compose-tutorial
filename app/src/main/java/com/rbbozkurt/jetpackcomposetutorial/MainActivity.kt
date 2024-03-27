@@ -1,8 +1,11 @@
-package com.rbbozkurt.jetpackcomposetutorial
+package com.example.basicscodelab
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,13 +34,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             JetpackComposeTutorialTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Greeting("Android")
-                }
+                MyApp(modifier = Modifier.fillMaxSize())
             }
         }
     }
@@ -45,75 +42,24 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MyApp(modifier: Modifier = Modifier) {
-    var shouldShowOnboarding by remember { mutableStateOf(true) }
+
+    var shouldShowOnboarding by rememberSaveable { mutableStateOf(true) }
+
     Surface(modifier) {
-        if(shouldShowOnboarding){
-            OnboardingScreen(onContinueClicked = {shouldShowOnboarding = false})
-        }else{
+        if (shouldShowOnboarding) {
+            OnboardingScreen(onContinueClicked = { shouldShowOnboarding = false })
+        } else {
             Greetings()
         }
     }
 }
 
 @Composable
-fun Greetings(
-    modifier: Modifier = Modifier,
-    names: List<String> = List(1000){"$it"}
+fun OnboardingScreen(
+    onContinueClicked: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    LazyColumn(modifier = modifier.padding(vertical = 4.dp)) {
-        items(items = names) { name ->
-            Greeting(name = name)
-        }
-    }
 
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    var expanded by remember { mutableStateOf(false) }
-    val extraPadding = if (expanded) 48.dp else 0.dp
-    Surface(
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(vertical = 4.dp, horizontal = 8.dp)
-    ) {
-        Row(modifier = Modifier.padding(24.dp)) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(bottom = extraPadding)
-            ) {
-                Text(text = "Hello")
-                Text(text = name)
-            }
-            ElevatedButton(
-                onClick = {
-                    expanded = !expanded
-                }) {
-                Text(if (expanded) "Show less" else "Show more")
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true, widthDp = 320)
-@Composable
-fun GreetingsPreview() {
-    JetpackComposeTutorialTheme {
-        Greetings()
-    }
-}
-
-@Preview
-@Composable
-fun MyAppPreview() {
-    JetpackComposeTutorialTheme {
-        MyApp(Modifier.fillMaxSize())
-    }
-}
-
-@Composable
-fun OnboardingScreen(modifier: Modifier = Modifier,onContinueClicked: () -> Unit) {
-    // TODO: This state should be hoisted
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -128,6 +74,19 @@ fun OnboardingScreen(modifier: Modifier = Modifier,onContinueClicked: () -> Unit
             Text("Continue")
         }
     }
+
+}
+
+@Composable
+private fun Greetings(
+    modifier: Modifier = Modifier,
+    names: List<String> = List(1000) { "$it" }
+) {
+    LazyColumn(modifier = modifier.padding(vertical = 4.dp)) {
+        items(items = names) { name ->
+            Greeting(name = name)
+        }
+    }
 }
 
 @Preview(showBackground = true, widthDp = 320, heightDp = 320)
@@ -138,3 +97,51 @@ fun OnboardingPreview() {
     }
 }
 
+@Composable
+private fun Greeting(name: String, modifier: Modifier = Modifier) {
+
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    val extraPadding by animateDpAsState(
+        if (expanded) 48.dp else 0.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ), label = ""
+    )
+    Surface(
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+    ) {
+        Row(modifier = Modifier.padding(24.dp)) {
+            Column(modifier = Modifier
+                .weight(1f)
+                .padding(bottom = extraPadding.coerceAtLeast(0.dp))
+            ) {
+                Text(text = "Hello, ")
+                Text(text = name)
+            }
+            ElevatedButton(
+                onClick = { expanded = !expanded }
+            ) {
+                Text(if (expanded) "Show less" else "Show more")
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 320)
+@Composable
+fun GreetingPreview() {
+    JetpackComposeTutorialTheme {
+        Greetings()
+    }
+}
+
+@Preview
+@Composable
+fun MyAppPreview() {
+    JetpackComposeTutorialTheme {
+        MyApp(Modifier.fillMaxSize())
+    }
+}
